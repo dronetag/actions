@@ -1,89 +1,65 @@
 name: Release new version to PyPI
 description: 'Release new version to PyPI using setuptools, build and publish'
 inputs:
-  commit:
-    required: false
-    description: 'Commit updated version in pyproject.toml'
-    default: "false"
   version:
     required: true
     description: 'Version to release'
-  github_token:
-    required: true
-    description: 'GitHub token'
-  python_version:
-    required: true
-    description: 'Python version to use'
-  private_pypi_name:
-    required: true
-    description: 'Name of the private PyPI repository'
-  private_pypi_host:
-    required: true
-    description: 'Host of the private PyPI repository'
-  private_pypi_user:
-    required: true
-    description: 'Username for the private PyPI repository'
-  private_pypi_pass:
+  pypi_pass:
     required: true
     description: 'Password for the private PyPI repository'
+
+  github_token:
+    required: false
+    description: 'GitHub token'
+    default: 'dummy'
+  pypi_name:
+    required: false
+    description: 'Name of the private PyPI repository'
+    default: 'pypi'
+  pypi_host:
+    required: false
+    description: 'Host of the private PyPI repository'
+    default: 'https://upload.pypi.org/legacy/'
+  pypi_user:
+    required: false
+    description: 'Username for the private PyPI repository'
+    default: '__token__'
 
 runs:
   using: 'composite'
   steps:
   - id: check-version-format
     run: |
-      if [[ ! "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
-        echo "Invalid version format. Expected vMAJOR.MINOR.PATCH(-SUFFIX)?, got ${GITHUB_REF_NAME}"
+      if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+        echo "Invalid version format. Expected MAJOR.MINOR.PATCH(-SUFFIX)?, got ${{ inputs.version }}"
         exit 1
       fi
     shell: bash
 
   - id: install-tools
     shell: bash
+    # it is necessary to upgrade setuptools over the system version to avoid issues with build
     run: |
-      python -m pip install --upgrade pip wheel
-      pip install setuptools build twine
-
-  - id: install-tools
-    shell: bash
-    run: |
-      python -m build
-      pip install setuptools wheel twine
+      python3 -m pip install --upgrade pip wheel setuptools
+      python3 -m pip install build twine
 
   - id: setup-pypirc
     shell: bash
     run: |
       echo "[distutils]
       index-servers=
-          pypi
-          ${{ inputs.private_pypi_name }}
+          ${{ inputs.pypi_name }}
 
-      [pypi]
-      url = https://upload.pypi.org/legacy/
-
-      [${{ inputs.private_pypi_name }}]
-      repository: ${{ inputs.private_pypi_host }}
-      username: ${{ inputs.private_pypi_user }}
-      password: ${{ inputs.private_pypi_pass }}
+      [${{ inputs.pypi_name }}]
+      repository: https://${{ inputs.pypi_host }}
+      username: ${{ inputs.pypi_user }}
+      password: ${{ inputs.pypi_pass }}
       " > ~/.pypirc
-
-      cat ~/.pypirc
 
   - id: build-and-upload
     shell: bash
     run: |
-      sed -i "s/version = .*/version = \"${{ inputs.version#v }}\"/g" pyproject.toml
-      python -m build
-      python3 -m twine upload --repository ${{private-pypi-name}} dist/*
+      sed -i "s/version = .*/version = \"${{ inputs.version }}\"/g" pyproject.toml
+      python3 -m build --no-isolation
+      python3 -m twine upload --repository ${{inputs.pypi_name}} --skip-existing --disable-progress-bar dist/*
 
-  - id: commit-version
-    if: inputs.commit == 'true'
-    shell: bash
-    run: |
-      if [[ $(git rev-parse heads/main) = $(git rev-parse ${GITHUB_REF}) ]]; then
-        echo "We are at the top of main branch so we can commit the version bump"
-        git checkout main
-        git add pyproject.toml
-        git commit -m "Release ${GITHUB_REF_NAME#v} [skip ci]"
-        git push
-      fi

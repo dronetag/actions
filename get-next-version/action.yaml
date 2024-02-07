@@ -1,10 +1,11 @@
 # This workflow runs the semantic-release tool in dry-mode and returns
-# the next available version. 
+# the next available version. Hence the behaviour is controlled by your
+# .releaserc file.
 #
-# The semantic-release tool analyses the latest commits and figures out
-# how the version should be bumped and creates a git tag accordingly.
-#
-# If the tag is in pre-release form (controlled by your .releaserc settings)
+# If the new version is a pre-release, it will be incremented until it
+# finds a version that does not exist as a tag in the repository. Hence
+# pre-release versions will always return a version but on production
+# branches the action fails if the version already exists as a tag.
 #
 # inputs:
 #   github_token: required only if project's .releaserc uses github plugin
@@ -23,13 +24,13 @@ inputs:
 outputs:
   version:
     description: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
-    value: ${{ jobs.release.outputs.version }}
+    value: ${{ steps.export-version.outputs.version }}
   prerelease:
     description: "True if current version is a pre-release"
-    value: ${{ jobs.release.outputs.prerelease }}
+    value: ${{ steps.export-version.outputs.prerelease }}
   changelog:
     description: "Changelog in markdown format"
-    value: ${{ jobs.release.outputs.changelog }}
+    value: ${{ steps.export-version.outputs.changelog }}
 
 runs:
   using: 'composite'
@@ -44,12 +45,12 @@ runs:
     run: npm install --global semantic-release@23
     shell: bash
 
-  - id: export-next-version
+  - id: export-version
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}  # it is not used because of --dry-run ... but required if it uses semver/github plugin
     run: |
-      NEXT_VERSION=`semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])'`
+      NEXT_VERSION=`semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])' || echo ""`
       cat $RUNNER_TEMP/semrel.txt | grep -v "^\[" > changelog.md
 
       if [[ -z $NEXT_VERSION ]]; then

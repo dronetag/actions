@@ -1,0 +1,87 @@
+# This workflow runs the semantic-release tool in dry-mode and returns
+# the next available version. 
+#
+# The semantic-release tool analyses the latest commits and figures out
+# how the version should be bumped and creates a git tag accordingly.
+#
+# If the tag is in pre-release form (controlled by your .releaserc settings)
+#
+# inputs:
+#   github_token: required only if project's .releaserc uses github plugin
+# outputs:
+#   version: the next version in format X.Y.Z[-pre-release.N]
+
+name: 'Get next version'
+description: 'Run semantic-release in dry-run mode to determine next version'
+
+inputs:
+  github_token:
+    required: false
+    default: 'dummy'
+    description: 'Pass only if your .releaserc uses the github plugin'
+
+outputs:
+  version:
+    description: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
+    value: ${{ jobs.release.outputs.version }}
+  prerelease:
+    description: "True if current version is a pre-release"
+    value: ${{ jobs.release.outputs.prerelease }}
+  changelog:
+    description: "Changelog in markdown format"
+    value: ${{ jobs.release.outputs.changelog }}
+
+runs:
+  using: 'composite'
+  steps:
+
+  - id: setup-node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 'latest'
+
+  - id: install-semantic-release
+    run: npm install --global semantic-release@23
+    shell: bash
+
+  - id: export-next-version
+    shell: bash
+    env:
+      GITHUB_TOKEN: ${{ inputs.github-token }}  # it is not used because of --dry-run ... but required if it uses semver/github plugin
+    run: |
+      NEXT_VERSION=`semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])'`
+      cat $RUNNER_TEMP/semrel.txt | grep -v "^\[" > changelog.md
+
+      if [[ -z $NEXT_VERSION ]]; then
+          echo "Could not determine next version. Most likely because you are on a tag already."
+          exit 1
+      fi
+
+      if [[ ! $NEXT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+          echo "Version must start with x.y.z"
+          exit 1
+      fi
+
+      if [[ $NEXT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z0-9\-]+\.[0-9]+$ ]]; then
+          echo "Pre-release mode - make sure to create a new version/tag"
+          echo "prerelease=true" >> $GITHUB_OUTPUT
+          while git rev-parse "v$NEXT_VERSION" >/dev/null 2>&1; do
+              echo "Tag v$NEXT_VERSION already exists. Incrementing last version part."
+              NEXT_VERSION=`python3 -c 'import sys;p=sys.stdin.readline().split("."); p[-1]=str(int(p[-1])+1);print(".".join(p))' <<< $NEXT_VERSION`
+          done
+      else
+        echo "prerelease=false" >> $GITHUB_OUTPUT
+      fi
+
+      echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+      echo "changelog<<EOF" >> $GITHUB_OUTPUT
+      echo "$(cat changelog.md)" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+
+      echo "Next version: $NEXT_VERSION"
+
+  - id: upload-changelog
+    uses: actions/upload-artifact@v4
+    with:
+      name: changelog
+      path: ./changelog.md

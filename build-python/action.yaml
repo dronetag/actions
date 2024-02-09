@@ -1,5 +1,6 @@
 name: Build python package
 description: 'Build python package with `build` and update its version = "X.Y.Z" in pyproject.toml'
+
 inputs:
   version:
     required: true
@@ -9,21 +10,24 @@ runs:
   using: 'composite'
   steps:
   - id: check-version-format
+    env:
+      version: ${{ inputs.version }}
     run: |
-      if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
-        echo "Invalid version format. Expected MAJOR.MINOR.PATCH(-SUFFIX)?, got ${{ inputs.version }}"
+      if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+        echo "Invalid version format. Expected MAJOR.MINOR.PATCH(-SUFFIX)?, got $version"
         exit 1
       fi
     shell: bash
 
   - id: install-tools
     shell: bash
-    # it is necessary to upgrade setuptools over the system version to avoid issues with build
     run: |
       python3 -m pip install --upgrade pip wheel setuptools build
 
   - id: build
     shell: bash
+    env:
+      version: ${{ inputs.version }}
     run: |
-      sed -i "s/version = .*/version = \"${{ inputs.version }}\"/g" pyproject.toml
+      sed -i "s/version = .*/version = \"$version\"/g" pyproject.toml
       python3 -m build --no-isolation

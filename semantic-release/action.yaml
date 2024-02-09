@@ -14,16 +14,16 @@ inputs:
 outputs:
   version:
     description: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
-    value: ${{ steps.export-version.outputs.version }}
+    value: ${{ steps.get-version.outputs.version }}
   existed:
     description: "Existed will be true if the tag already existed"
-    value: ${{ steps.export-version.outputs.exists }}
+    value: ${{ steps.get-version.outputs.exists }}
   prerelease:
     description: "True if current version is a pre-release"
-    value: ${{ steps.export-version.outputs.prerelease }}
+    value: ${{ steps.get-version.outputs.prerelease }}
   changelog:
     description: "Changelog in markdown format"
-    value: ${{ steps.export-version.outputs.changelog }}
+    value: ${{ steps.get-version.outputs.changelog }}
 
 runs:
   using: 'composite'

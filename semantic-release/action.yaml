@@ -1,18 +1,4 @@
-# This workflow runs the semantic-release tool in dry-mode and returns
-# the next available version. Hence the behaviour is controlled by your
-# .releaserc file.
-#
-# If the new version is a pre-release, it will be incremented until it
-# finds a version that does not exist as a tag in the repository. Hence
-# pre-release versions will always return a version but on production
-# branches the action fails if the version already exists as a tag.
-#
-# inputs:
-#   github_token: required only if project's .releaserc uses github plugin
-# outputs:
-#   version: the next version in format X.Y.Z[-pre-release.N]
-
-name: 'Get next version'
+name: 'Semantic Release version'
 description: 'Run semantic-release in dry-run mode to determine next version'
 
 inputs:
@@ -20,11 +6,18 @@ inputs:
     required: false
     default: 'dummy'
     description: 'Pass only if your .releaserc uses the github plugin'
+  tag:
+    required: false
+    default: 'prerelease'
+    description: 'Controls tagging and pushing: "always", "prerelease" pre-release only, "never"'
 
 outputs:
   version:
     description: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
     value: ${{ steps.export-version.outputs.version }}
+  existed:
+    description: "Existed will be true if the tag already existed"
+    value: ${{ steps.export-version.outputs.exists }}
   prerelease:
     description: "True if current version is a pre-release"
     value: ${{ steps.export-version.outputs.prerelease }}
@@ -45,17 +38,28 @@ runs:
     run: npm install --global semantic-release@23
     shell: bash
 
-  - id: export-version
+  - id: get-version
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}  # it is not used because of --dry-run ... but required if it uses semver/github plugin
     run: |
       NEXT_VERSION=`semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])' || echo ""`
-      cat $RUNNER_TEMP/semrel.txt | grep -v "^\[" > changelog.md
 
       if [[ -z $NEXT_VERSION ]]; then
-          echo "Could not determine next version. Most likely because you are on a tag already."
-          exit 1
+          echo "exists=true" >> $GITHUB_OUTPUT
+          THIS_VERSION=$(git tag --points-at HEAD)
+          echo "CURRENT_TAG: $CURRENT_TAG"
+          if [[ $CURRENT_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z0-9\-]+\.[0-9]+$ ]]; then
+              echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            if [[ "$CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+            else
+              echo "Invalid tag on current commit. Expected vMAJOR.MINOR.PATCH(-SUFFIX)?, got ${CURRENT_TAG}"
+              exit 1
+            fi
+          echo "version=${CURRENT_TAG#v}" >> $GITHUB_OUTPUT
+          exit 0
       fi
 
       if [[ ! $NEXT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
@@ -71,18 +75,32 @@ runs:
               NEXT_VERSION=`python3 -c 'import sys;p=sys.stdin.readline().split("."); p[-1]=str(int(p[-1])+1);print(".".join(p))' <<< $NEXT_VERSION`
           done
       else
+        if [[ git rev-parse "v$NEXT_VERSION" >/dev/null 2>&1 ]]; then
+          echo "Release tag v$NEXT_VERSION already exists on another commit. Failling."
+          exit 1
+        fi
         echo "prerelease=false" >> $GITHUB_OUTPUT
       fi
 
+      cat $RUNNER_TEMP/semrel.txt | grep -v "^\[" > changelog${NEXT_VERSION}.md
+      if [[ -f changelog.md ]]; then
+          mv changelog.md changelog.tmp.md
+          cat changelog${NEXT_VERSION}.md changelog.tmp.md > changelog.md
+          rm changelog.tmp.md
+      else
+          cp changelog${NEXT_VERSION}.md changelog.md
+      fi
+
+      echo "exists=false" >> $GITHUB_OUTPUT
       echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
       echo "changelog<<EOF" >> $GITHUB_OUTPUT
       echo "$(cat changelog.md)" >> $GITHUB_OUTPUT
       echo "EOF" >> $GITHUB_OUTPUT
-
       echo "Next version: $NEXT_VERSION"
 
   - id: upload-changelog
     uses: actions/upload-artifact@v4
+    if: ${{ steps.get-version.outputs.created == 'true' }}
     with:
-      name: changelog
+      name: changelog${{ steps.get-version.outputs.version }}
       path: ./changelog.md

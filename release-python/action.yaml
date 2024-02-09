@@ -6,7 +6,7 @@ inputs:
     description: 'Version to release'
   pypi_pass:
     required: true
-    description: 'Password for the private PyPI repository'
+    description: 'Password of PyPI repository'
 
   github_token:
     required: false
@@ -14,15 +14,15 @@ inputs:
     default: 'dummy'
   pypi_name:
     required: false
-    description: 'Name of the private PyPI repository'
+    description: 'Name of PyPI repository'
     default: 'pypi'
   pypi_host:
     required: false
-    description: 'Host of the private PyPI repository'
+    description: 'Host of PyPI repository'
     default: 'https://upload.pypi.org/legacy/'
   pypi_user:
     required: false
-    description: 'Username for the private PyPI repository'
+    description: 'Username of PyPI repository'
     default: '__token__'
 
 runs:
@@ -62,4 +62,3 @@ runs:
       sed -i "s/version = .*/version = \"${{ inputs.version }}\"/g" pyproject.toml
       python3 -m build --no-isolation
       python3 -m twine upload --repository ${{inputs.pypi_name}} --skip-existing --disable-progress-bar dist/*
-

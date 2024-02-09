@@ -34,7 +34,7 @@ pre-release versions will always return a version but on production
 branches the action fails if the version already exists as a tag.
 
 If the action is run on a commit that has a tag on it, it will return
-this tag together with `outputs.exists='true'`.
+this tag together with `outputs.existed='true'`.
 
 If you use "@semantic-release/release-notes-generator" in your .releaserc
 then a changelog.md and changelog{version}.md will be available in the
@@ -49,4 +49,4 @@ repository to your disposition. Also, the changelog will be returned in
 - `version`: the next version in format `X.Y.Z[-pre-release.N]`
 - `changelog`: the changelog in markdown format
 - `prerelease`: true if the next version is a pre-release
-- `exists`: true if the version already exists as a tag on current commit
+- `existed`: true if the version already existed as a tag on current commit

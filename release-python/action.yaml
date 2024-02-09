@@ -1,9 +1,6 @@
-name: Release new version to PyPI
-description: 'Release new version to PyPI using setuptools, build and publish'
+name: Upload packages from dist/ to PyPI
+description: 'Uses twine to upload packages from dist/ to public or private PyPI'
 inputs:
-  version:
-    required: true
-    description: 'Version to release'
   pypi_pass:
     required: true
     description: 'Password of PyPI repository'
@@ -38,10 +35,8 @@ runs:
 
   - id: install-tools
     shell: bash
-    # it is necessary to upgrade setuptools over the system version to avoid issues with build
     run: |
-      python3 -m pip install --upgrade pip wheel setuptools
-      python3 -m pip install build twine
+      python3 -m pip install --upgrade twine
 
   - id: setup-pypirc
     shell: bash
@@ -56,9 +51,7 @@ runs:
       password: ${{ inputs.pypi_pass }}
       " > ~/.pypirc
 
-  - id: build-and-upload
+  - id: upload
     shell: bash
     run: |
-      sed -i "s/version = .*/version = \"${{ inputs.version }}\"/g" pyproject.toml
-      python3 -m build --no-isolation
       python3 -m twine upload --repository ${{inputs.pypi_name}} --skip-existing --disable-progress-bar dist/*

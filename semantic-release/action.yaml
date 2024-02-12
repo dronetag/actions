@@ -83,10 +83,12 @@ runs:
         echo "prerelease=false" >> $GITHUB_OUTPUT
       fi
 
-      cat $RUNNER_TEMP/semrel.txt | grep -v "^\[" > changelog${NEXT_VERSION}.md
+      cat $RUNNER_TEMP/semrel.txt | awk '!f && /^#/ {f=1} f' > changelog${NEXT_VERSION}.md
+      echo "" >> changelog${NEXT_VERSION}.md
+      echo "\n" >> $RUNNER_TEMP/space.txt
       if [[ -f changelog.md ]]; then
           mv changelog.md changelog.tmp.md
-          cat changelog${NEXT_VERSION}.md changelog.tmp.md > changelog.md
+          cat changelog${NEXT_VERSION}.md $RUNNER_TEMP/space.txt changelog.tmp.md > changelog.md
           rm changelog.tmp.md
       else
           cp changelog${NEXT_VERSION}.md changelog.md

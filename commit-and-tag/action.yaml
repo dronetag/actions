@@ -27,7 +27,7 @@ runs:
     shell: bash
 
   - id: commit
-    if: ${{ inputs.commit == 'true' }}
+    if: ${{ inputs.commit == 'true' || inputs.commit == '1'}}
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}

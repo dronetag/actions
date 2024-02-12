@@ -1,23 +1,19 @@
 name: Upload packages from dist/ to PyPI
 description: 'Uses twine to upload packages from dist/ to public or private PyPI'
 inputs:
-  pypi_pass:
+  pypi-pass:
     required: true
     description: 'Password of PyPI repository'
 
-  github_token:
-    required: false
-    description: 'GitHub token'
-    default: 'dummy'
-  pypi_name:
+  pypi-name:
     required: false
     description: 'Name of PyPI repository'
     default: 'pypi'
-  pypi_host:
+  pypi-host:
     required: false
     description: 'Host of PyPI repository'
     default: 'https://upload.pypi.org/legacy/'
-  pypi_user:
+  pypi-user:
     required: false
     description: 'Username of PyPI repository'
     default: '__token__'
@@ -32,10 +28,10 @@ runs:
   - id: setup-pypirc
     shell: bash
     env:
-      pypi_name: ${{ inputs.pypi_name }}
-      pypi_host: ${{ inputs.pypi_host }}
-      pypi_user: ${{ inputs.pypi_user }}
-      pypi_pass: ${{ inputs.pypi_pass }}
+      pypi_name: ${{ inputs.pypi-name }}
+      pypi_host: ${{ inputs.pypi-host }}
+      pypi_user: ${{ inputs.pypi-user }}
+      pypi_pass: ${{ inputs.pypi-pass }}
     run: |
       echo "[distutils]
       index-servers=
@@ -49,4 +45,4 @@ runs:
 
   - id: upload
     shell: bash
-    run: python3 -m twine upload --repository ${{ inputs.pypi_name }} --skip-existing --disable-progress-bar dist/*
+    run: python3 -m twine upload --repository ${{ inputs.pypi-name }} --skip-existing --disable-progress-bar dist/*

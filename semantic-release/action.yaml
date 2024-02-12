@@ -2,7 +2,7 @@ name: 'Semantic Release version'
 description: 'Run semantic-release in dry-run mode to determine next version'
 
 inputs:
-  github_token:
+  github-token:
     required: false
     default: 'dummy'
     description: 'Pass only if your .releaserc uses the github plugin'

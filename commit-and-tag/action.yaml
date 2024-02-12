@@ -15,7 +15,7 @@ inputs:
   git-add:
     required: false
     default: ''
-    description: 'Extra files to `git add` if committing'
+    description: 'Extra files to `git add` when/if committing'
 
 runs:
   using: 'composite'
@@ -34,10 +34,10 @@ runs:
     run: |
       if [[ $(git rev-parse origin/${{github.event.repository.default_branch}}) = $(git rev-parse HEAD) ]]; then
         git checkout ${{github.event.repository.default_branch}}  # in case we are on tag
-        if [[ ! $(git diff --exit-code) ]]; then
+        if ! (git diff --exit-code && git diff --cached --exit-code); then
+          # we have changes - either unstaged or staged => proceed with commit
           git config --local user.email "" && git config --local user.name "GitHub Action"
           git diff --name-only | xargs git add
-          git add changelog.md
           git commit -m "Release ${{ inputs.version }} [skip ci]"
           git push origin ${{github.event.repository.default_branch}}
         fi

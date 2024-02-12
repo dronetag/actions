@@ -49,4 +49,4 @@ runs:
 
   - id: upload
     shell: bash
-    run: python3 -m twine upload --repository $pypi_name --skip-existing --disable-progress-bar dist/*
+    run: python3 -m twine upload --repository ${{ inputs.pypi_name }} --skip-existing --disable-progress-bar dist/*

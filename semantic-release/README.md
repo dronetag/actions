@@ -4,7 +4,14 @@ This action runs the semantic-release tool in dry-mode and returns
 current or the next available version. Hence the behaviour is influenced
 by your `.releaserc` file.
 
-The recommended content of .releaserc is following:
+This action requires that the repository was cloned by
+```yaml
+    - name: Checkout repository (full-depth)
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0 } # Required to determine version
+```
+
+The recommended content of `.releaserc` is following:
 ```json
 {
 	"branches": [

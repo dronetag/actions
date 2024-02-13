@@ -28,22 +28,25 @@ The recommended content of .releaserc is following:
 It has `main` branch as the production and all `[fix/feature/...]/<description>`
 branches will be pre-release branches.
 
+You will get current version if you run this action on a commit that
+has a tag on it. It also sets `outputs.existed='true'`.
+
 If the new version is a pre-release, it will be incremented until it
 finds a version that does not exist as a tag in the repository. Hence
 pre-release versions will always return a version but on production
 branches the action fails if the version already exists as a tag.
 
-If the action is run on a commit that has a tag on it, it will return
-this tag together with `outputs.existed='true'`.
-
-If you use "@semantic-release/release-notes-generator" in your .releaserc
-then a changelog.md and changelog{version}.md will be available in the
-repository to your disposition. Also, the changelog will be returned in
-`outputs.changelog` and saved as an artifact under name `changelog{version}`.
+If you have _"@semantic-release/release-notes-generator"_ in your .releaserc
+and allow changelog generator via `inputs.changelog=true` then a changelog.md
+and changelog{version}.md will be available in the repository to your disposition.
+The changelog will also be uploaded as an artifact under name `changelog{version}`.
+Nevertheless, the changelog will be returned in `outputs.changelog` whether you
+specify `inputs.changelog=true` or not.
 
 
 **inputs:**
 - `github_token`: required only if project's .releaserc uses github plugin
+- `changelog`: whether to produce changelog.md, changelog{version}.md and an artifact
 
 **outputs:**
 - `version`: the next version in format `X.Y.Z[-pre-release.N]`

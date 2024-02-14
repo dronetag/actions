@@ -8,6 +8,11 @@ inputs:
   github-token:
     required: true
     description: 'Pass only if your .releaserc uses the github plugin'
+
+  tag-message:
+    required: false
+    default: ''
+    description: 'If tag message is present then annotated tag will be created'
   commit:
     required: false
     default: 'true'
@@ -47,8 +52,13 @@ runs:
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
+      TAG_MESSAGE: ${{ inputs.tag-message }}
     run: |
       git show-ref --tags --verify --quiet "refs/tags/v${{ inputs.version }}" && exit 0
       git config --local user.email "" && git config --local user.name "GitHub Action"
-      git tag v${{ inputs.version }}
+      if [[ -z "${TAG_MESSAGE}" ]]; then
+        git tag v${{ inputs.version }}
+      else
+        git tag -a v${{ inputs.version }} -m "${TAG_MESSAGE}"
+      fi
       git push origin v${{ inputs.version }}

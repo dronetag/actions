@@ -103,11 +103,12 @@ runs:
     if: ${{ inputs.changelog == 'true' }}
     env:
       NEXT_VERSION: ${{ steps.get-version.outputs.version }}
+      CHANGELOG: ${{ steps.get-changelog.outputs.changelog }}
     shell: bash
     run: |
       grep "release-notes-generator" .releaserc >/dev/null || exit 1
-      awk '!f && /^#/ {f=1} f' $RUNNER_TEMP/semrel.txt >> changelog-${NEXT_VERSION}.md
-      echo "\n" >> $RUNNER_TEMP/space.txt
+      echo "$CHANGELOG" >> changelog-${NEXT_VERSION}.md
+      echo "" >> $RUNNER_TEMP/space.txt
       if [[ -f changelog.md ]]; then
           mv changelog.md changelog.tmp.md
           cat changelog-${NEXT_VERSION}.md $RUNNER_TEMP/space.txt changelog.tmp.md > changelog.md

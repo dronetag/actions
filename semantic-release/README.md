@@ -60,3 +60,14 @@ specify `inputs.changelog=true` or not.
 - `changelog`: the changelog in markdown format
 - `prerelease`: true if the next version is a pre-release
 - `existed`: true if the version already existed as a tag on current commit
+
+
+## Example usage
+
+```yaml
+    - name: Get next release version
+      uses: dronetag/actions/semantic-release@main
+      id: semantic
+      with:
+        changelog: false
+```

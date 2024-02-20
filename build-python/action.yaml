@@ -22,12 +22,12 @@ runs:
   - id: install-tools
     shell: bash
     run: |
-      python3 -m pip install --upgrade pip wheel setuptools build
+      python3 -m pip install --upgrade wheel setuptools build
 
   - id: build
     shell: bash
     env:
       version: ${{ inputs.version }}
     run: |
-      sed -i "s/version = .*/version = \"$version\"/g" pyproject.toml
+      sed -i "s/version *= *[\"'][0-9].*/version = \"$version\"/g" pyproject.toml
       python3 -m build --no-isolation

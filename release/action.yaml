@@ -1,0 +1,86 @@
+name: 'Release on git and github'
+description: 'Commit changes in repository (optional), tag current commit with vVERSION abd create a Github Release'
+
+inputs:
+  version:
+    required: true
+    description: 'Version to tag with (vVERSION) and to commit ("Release VERSION") in format X.Y.Z[-aaa.N]'
+  github-token:
+    required: true
+    description: 'Pass only if your .releaserc uses the github plugin'
+  changelog:
+    required: false
+    default: ''
+    description: 'Text of the changelog (used for changelog.md and/or release notes)'
+  commit-changelog:
+    required: false
+    default: 'false'
+    description: 'Whether to commit prepended changelog.md'
+  git-add:
+    required: false
+    default: ''
+    description: 'Space delimited files to `git add` when/if committing'
+
+runs:
+  using: 'composite'
+  steps:
+
+  - id: changelog
+    if: ${{ inputs.commit-changelog == 'true' }}
+    env:
+      CHANGELOG: ${{ inputs.changelog }}
+    shell: bash
+    run: |
+      echo "" >> $RUNNER_TEMP/space.txt
+      if [[ -f changelog.md ]]; then
+          mv changelog.md changelog.tmp.md
+          echo "$CHANGELOG" > changelog.md
+          echo "" >> changelog.md
+          cat changelog.tmp.md >> changelog.md
+          rm changelog.tmp.md
+      else
+          echo "$CHANGELOG" > changelog.md
+      fi
+      git add changelog.md
+
+  - id: git-add
+    if: ${{ inputs.git-add != '' }}
+    run: git add ${{ inputs.git-add }}
+    shell: bash
+
+  - id: commit
+    if: ${{ inputs.git-add != '' || inputs.commit-changelog == 'true' }}
+    shell: bash
+    env:
+      GITHUB_TOKEN: ${{ inputs.github-token }}
+    run: |
+      # we have changes - either unstaged or staged => proceed with commit
+      git config --local user.email "" && git config --local user.name "GitHub Action"
+      git commit -m "Release ${{ inputs.version }} [skip ci]"
+      git push origin ${{github.event.repository.default_branch}}
+
+  - id: tag
+    shell: bash
+    env:
+      GITHUB_TOKEN: ${{ inputs.github-token }}
+      TAG_MESSAGE: ${{ inputs.tag-message }}
+    run: |
+      echo "name=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+      git show-ref --tags --verify --quiet "refs/tags/v${{ inputs.version }}" && exit 0
+      git config --local user.email "" && git config --local user.name "GitHub Action"
+      if [[ -z "${TAG_MESSAGE}" ]]; then
+        git tag v${{ inputs.version }}
+      else
+        git tag -a v${{ inputs.version }} -m "${TAG_MESSAGE}"
+      fi
+      git push origin v${{ inputs.version }}
+
+  - name: Create Release
+    id: create_release
+    uses: actions/create-release@v1
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+    with:
+      tag_name: ${{ steps.tag.name }}
+      release_name: Release ${{ inputs.version }}
+      body: ${{ inputs.changelog }}

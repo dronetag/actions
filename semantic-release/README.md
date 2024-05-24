@@ -1,15 +1,30 @@
 ## dronetag/actions/semantic-release
 
-This action runs the semantic-release tool in dry-mode and returns
-current or the next available version. Hence the behaviour is influenced
-by your `.releaserc` file.
+This action runs the semantic-release tool in dry-mode and returns current or the next
+available version. Hence the behavior is influenced by your `.releaserc` file.
 
-This action requires that the repository was cloned by
 ```yaml
-    - name: Checkout repository (full-depth)
+	# semantic-release requires that the repository was cloned with
+	- name: Checkout repository (full-depth)
       uses: actions/checkout@v4
       with: { fetch-depth: 0 } # Required to determine version
+
+    - name: Get next release version
+      uses: dronetag/actions/semantic-release@main
+      id: semantic
+      with:
+        # github-token:: ${{secrets.GITHUB_TOKEN}} # only if .releaserc contains github plugin
 ```
+## Outputs
+
+- `version`: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
+- `existed`: "Existed will be true if the tag already existed"
+- `release`: "True if current version is a release version"
+- `prerelease`: "True if current version is a pre-release"
+- `changelog`: "Changelog in markdown format"
+
+
+## Configuration (.releaserc)
 
 The recommended content of `.releaserc` is following:
 ```json
@@ -50,24 +65,3 @@ The changelog will also be uploaded as an artifact under name `changelog{version
 Nevertheless, the changelog will be returned in `outputs.changelog` whether you
 specify `inputs.changelog=true` or not.
 
-
-**inputs:**
-- `github_token`: required only if project's .releaserc uses github plugin
-- `changelog`: whether to produce changelog.md, changelog{version}.md and an artifact
-
-**outputs:**
-- `version`: the next version in format `X.Y.Z[-pre-release.N]`
-- `changelog`: the changelog in markdown format
-- `prerelease`: true if the next version is a pre-release
-- `existed`: true if the version already existed as a tag on current commit
-
-
-## Example usage
-
-```yaml
-    - name: Get next release version
-      uses: dronetag/actions/semantic-release@main
-      id: semantic
-      with:
-        changelog: false
-```

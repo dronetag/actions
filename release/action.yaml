@@ -1,4 +1,4 @@
-name: 'Release on git and github'
+name: 'Release on git and Github'
 description: 'Commit changes in repository (optional), tag current commit with vVERSION abd create a Github Release'
 
 inputs:
@@ -24,6 +24,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
+
+  - name: check existence of the tag
+    shell: bash
+    run: |
+      if (git show-ref --tags --verify --quiet "refs/tags/v${{ inputs.version }}"); then
+          echo "Tag v${{ inputs.version }} already exists"
+          exit 1
+      fi
 
   - id: changelog
     if: ${{ inputs.commit-changelog == 'true' }}
@@ -66,7 +74,6 @@ runs:
       TAG_MESSAGE: ${{ inputs.tag-message }}
     run: |
       echo "name=v${{ inputs.version }}" >> $GITHUB_OUTPUT
-      git show-ref --tags --verify --quiet "refs/tags/v${{ inputs.version }}" && exit 0
       git config --local user.email "" && git config --local user.name "GitHub Action"
       if [[ -z "${TAG_MESSAGE}" ]]; then
         git tag v${{ inputs.version }}

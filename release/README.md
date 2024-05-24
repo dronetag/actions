@@ -9,10 +9,10 @@ Commit (optional) and tag the current commit. After that - create a github relea
     # most likely dronetag/action/semantic-release was run
     # with: changelog: true (which is the default so far)
     - name: Release
-      if: ${{ steps.semantic.outputs.existed == 'false' && steps.semantic.outputs.release == 'true' }}
+      if: steps.semantic.outputs.existed == 'false' && steps.semantic.outputs.release == 'true'
       uses: dronetag/actions/release@main
       with:
-        github-token: ${{ github.token }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         version: ${{ steps.semantic.outputs.version }} # expected semver format X.Y.Z[-xxx.N]
         changelog: ${{ steps.semantic.outputs.changelog }}
         commit-changelog: false

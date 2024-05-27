@@ -87,6 +87,6 @@ runs:
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
     with:
-      tag_name: ${{ steps.tag.name }}
+      tag_name: v${{ inputs.version }}
       release_name: Release ${{ inputs.version }}
       body: ${{ inputs.changelog }}

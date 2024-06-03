@@ -4,8 +4,8 @@ This action runs the semantic-release tool in dry-mode and returns current or th
 available version. Hence the behavior is influenced by your `.releaserc` file.
 
 ```yaml
-	# semantic-release requires that the repository was cloned with
-	- name: Checkout repository (full-depth)
+    # semantic-release requires that the repository was cloned with
+    - name: Checkout repository (full-depth)
       uses: actions/checkout@v4
       with: { fetch-depth: 0 } # Required to determine version
 
@@ -17,11 +17,11 @@ available version. Hence the behavior is influenced by your `.releaserc` file.
 ```
 ## Outputs
 
-- `version`: "Next version in format X.Y.Z[-<prerelease-branch-name>.N]"
-- `existed`: "Existed will be true if the tag already existed"
-- `release`: "True if current version is a release version"
-- `prerelease`: "True if current version is a pre-release"
-- `changelog`: "Changelog in markdown format"
+- `version`: Next version in format X.Y.Z[-<prerelease-branch-name>.N]
+- `existed`: Existed will be true if the tag already existed
+- `release`: True if current version is a release version
+- `prerelease`: True if current version is a pre-release
+- `changelog`: Changelog in markdown format
 
 
 ## Configuration (.releaserc)
@@ -47,6 +47,7 @@ The recommended content of `.releaserc` is following:
 	]
 }
 ```
+
 It has `main` branch as the production and all `[fix/feature/...]/<description>`
 branches will be pre-release branches.
 

@@ -37,12 +37,19 @@ runs:
     run: npm install --global semantic-release@23 > /dev/null
     shell: bash
 
+  - id: run-semrel
+    shell: bash
+    env:
+      GITHUB_TOKEN: ${{ inputs.github-token }}  # it is not used because of --dry-run ... but required if it uses semver/github plugin
+    run: |
+      semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt
+
   - id: get-version
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}  # it is not used because of --dry-run ... but required if it uses semver/github plugin
     run: |
-      NEXT_VERSION=$((semantic-release --dry-run | tee $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])') || echo "")
+      NEXT_VERSION=$((cat $RUNNER_TEMP/semrel.txt | grep "The next release version is" | python3 -c 'import sys;print(sys.stdin.readline().split(" ")[-1])') || echo "")
 
       if [[ -z $NEXT_VERSION ]]; then
           echo "exists=true" >> $GITHUB_OUTPUT

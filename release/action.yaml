@@ -16,6 +16,10 @@ inputs:
     required: false
     default: 'false'
     description: 'Whether to commit prepended changelog.md'
+  tag-only:
+    required: false
+    default: 'false'
+    description: 'If true, Github release is omitted'
   git-add:
     required: false
     default: ''
@@ -33,7 +37,7 @@ runs:
       fi
 
   - id: changelog
-    if: ${{ inputs.commit-changelog == 'true' }}
+    if: inputs.commit-changelog == 'true'
     env:
       CHANGELOG: ${{ inputs.changelog }}
     shell: bash
@@ -51,12 +55,12 @@ runs:
       git add changelog.md
 
   - id: git-add
-    if: ${{ inputs.git-add != '' }}
+    if: inputs.git-add != ''
     run: git add ${{ inputs.git-add }}
     shell: bash
 
   - id: commit
-    if: ${{ inputs.git-add != '' || inputs.commit-changelog == 'true' }}
+    if: inputs.git-add != '' || inputs.commit-changelog == 'true'
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -84,6 +88,7 @@ runs:
   - name: Create Release
     id: create_release
     uses: actions/create-release@v1
+    if: inputs.tag-only == 'false'
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
     with:

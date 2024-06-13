@@ -1,6 +1,6 @@
 # dronetag/actions/release
 
-Commit (optional) and tag the current commit. After that - create a github release.
+Commit (optional) and tag the current commit. Optionally, create a github release.
 
 ## Usage
 
@@ -16,7 +16,8 @@ Commit (optional) and tag the current commit. After that - create a github relea
         version: ${{ steps.semantic.outputs.version }} # expected semver format X.Y.Z[-xxx.N]
         changelog: ${{ steps.semantic.outputs.changelog }}
         commit-changelog: false
-        # git-add: place filenames (such as updated version files) here to be included in (optional) release commit
+        tag-only: ${{ steps.semantic.outputs.prerelease }}  # do not create github releases for development releases (optional, default 'false')
+        # git-add: place filenames (such as updated version files) here to be included  (optional) release commit
 ```
 
 ## Output

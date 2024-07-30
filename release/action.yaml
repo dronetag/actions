@@ -60,7 +60,7 @@ runs:
     shell: bash
 
   - id: commit
-    if: inputs.git-add != '' || inputs.commit-changelog == 'true'
+    if: (inputs.git-add != '' || inputs.commit-changelog == 'true') && inputs.tag-only != 'true'
     shell: bash
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}

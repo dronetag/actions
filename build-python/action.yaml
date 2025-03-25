@@ -30,4 +30,4 @@ runs:
       version: ${{ inputs.version }}
     run: |
       sed -i "s/version *= *[\"'][0-9].*/version = \"$version\"/g" pyproject.toml
-      python3 -m build --no-isolation
+      python3 -m build

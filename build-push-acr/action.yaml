@@ -1,0 +1,101 @@
+name: Build & push to ACR
+
+description: |
+  Builds an image using the project's Dockerfile, and pushes it 
+  to ACR (Azure Container Registry) repository.
+
+inputs:
+  tags:
+    required: false
+    default: latest
+    description: Tags for the Docker image
+  repository-name:
+    required: true
+    description: Name of the repository in ACR
+  acr-login-server:
+    required: false
+    default: "dronetag.azurecr.io"
+    description: ACR login server (defaults to `dronetag.azurecr.io`)
+  acr-username:
+    required: true
+    description: Username for ACR authentication
+  acr-password:
+    required: true
+    description: Password for ACR authentication
+  github-token:
+    required: true
+    description: GitHub token
+  build-args:
+    required: false
+    description: Build arguments to pass to the Docker build
+  build-secrets:
+    required: false
+    description: Secrets to pass to the Docker build
+  actor:
+    required: true
+    description: GitHub actor (username) for authentication
+  ssh_socket_forward:
+    required: false
+    default: "false"
+    description: Enables SSH socket forwarding
+  context:
+    required: false
+    default: "."
+    description: Build context for the Docker build
+
+outputs:
+  tags:
+    value: ${{ steps.list.outputs.tags }}
+    description: List of pushed tags
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - id: auth-acr
+      name: Authenticate with ACR
+      uses: azure/docker-login@v2
+      with:
+        login-server: ${{ inputs.acr-login-server }}
+        username: ${{ inputs.acr-username }}
+        password: ${{ inputs.acr-password }}
+
+    - id: auth-ghcr
+      name: Authorize Docker to ghcr.io
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.actor }}
+        password: ${{ inputs.github-token }}
+
+    - id: list
+      name: List output image tags
+      env:
+        TAGS: ${{ inputs.tags }}
+        REGISTRY: ${{ inputs.acr-login-server }}
+        REPOSITORY: ${{ inputs.repository-name }}
+      shell: bash
+      run: |
+        REPOSITORY_URI="$REGISTRY/$REPOSITORY"
+        echo "::set-output name=tags::$(echo $TAGS | sed "s|[^ ]*|$REPOSITORY_URI\:&\n|g")"
+
+    - id: collect-ssh-config
+      name: Collect Git and SSH config files in a directory that is part of the Docker build context
+      if: ${{ inputs.ssh_socket_forward == 'true'}}
+      shell: bash
+      run: |
+        mkdir root-config
+        cp -r ~/.gitconfig  ~/.ssh root-config/
+
+    - id: docker-build
+      name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        push: true
+        build-args: ${{ inputs.build-args }}
+        secrets: ${{ inputs.build-secrets }}
+        tags: "${{ steps.list.outputs.tags }}"
+        ssh: ${{ inputs.ssh_socket_forward == 'true' && env.SSH_AUTH_SOCK || '' }}

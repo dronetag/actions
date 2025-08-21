@@ -23,7 +23,7 @@ runs:
   steps:
   - id: install-tools
     shell: bash
-    run: python3 -m pip install --upgrade twine
+    run: python3 -m pip install --upgrade twine packaging
 
   - id: setup-pypirc
     shell: bash

@@ -71,12 +71,12 @@ runs:
           exit 0
       fi
 
-      if [[ ! $NEXT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+      if [[ ! "$NEXT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
           echo "Version must start with x.y.z"
           exit 1
       fi
 
-      if [[ $NEXT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z0-9\-]+\.[0-9]+$ ]]; then
+      if [[ "$NEXT_VERSION" =~ (dev|rc)[\.\-]?[0-9]+$ ]]; then
           echo "Pre-release mode - make sure to create a new version/tag"
           echo "release=false" >> $GITHUB_OUTPUT
           echo "prerelease=true" >> $GITHUB_OUTPUT

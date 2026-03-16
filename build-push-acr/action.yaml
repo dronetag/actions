@@ -42,6 +42,9 @@ inputs:
     required: false
     default: "."
     description: Build context for the Docker build
+  platforms:
+    type: string
+    required: false
 
 outputs:
   tags:
@@ -98,4 +101,5 @@ runs:
         build-args: ${{ inputs.build-args }}
         secrets: ${{ inputs.build-secrets }}
         tags: "${{ steps.list.outputs.tags }}"
+        platforms: ${{ inputs.platforms }}
         ssh: ${{ inputs.ssh_socket_forward == 'true' && env.SSH_AUTH_SOCK || '' }}

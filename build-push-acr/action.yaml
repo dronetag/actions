@@ -118,4 +118,4 @@ runs:
         secrets: ${{ inputs.build-secrets }}
         tags: "${{ steps.list.outputs.tags }}"
         platforms: ${{ inputs.platforms }}
-        ssh: ${{ inputs.ssh_socket_forward == 'true' && env.SSH_AUTH_SOCK || '' }}
+        ssh: ${{ inputs.ssh_socket_forward == 'true' && format('default={0}', env.SSH_AUTH_SOCK) || '' }}

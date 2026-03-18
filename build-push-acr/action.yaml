@@ -90,14 +90,6 @@ runs:
         REPOSITORY_URI="$REGISTRY/$REPOSITORY"
         echo "::set-output name=tags::$(echo $TAGS | sed "s|[^ ]*|$REPOSITORY_URI\:&\n|g")"
 
-    - id: collect-ssh-config
-      name: Collect Git and SSH config files in a directory that is part of the Docker build context
-      if: ${{ inputs.ssh_socket_forward == 'true'}}
-      shell: bash
-      run: |
-        mkdir root-config
-        cp -r ~/.gitconfig  ~/.ssh root-config/
-
     - id: setup-qemu
       name: Set up QEMU
       if: ${{ inputs.use-qemu }}

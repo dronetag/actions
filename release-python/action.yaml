@@ -17,6 +17,10 @@ inputs:
     required: false
     description: 'Username of PyPI repository'
     default: '__token__'
+  pypi-simple-url:
+    required: false
+    description: 'Simple index used to verify the uploaded files. Default: https://<pypi-host>/simple/, or https://pypi.org/simple/ for PyPI'
+    default: ''
 
 runs:
   using: 'composite'
@@ -43,6 +47,23 @@ runs:
       password: $pypi_pass
       " > ~/.pypirc
 
+  # Uploads each file and downloads it again from the simple index. The job
+  # fails unless the index serves exactly the built file. "Already exists" is
+  # accepted only for an identical file (see upload.py).
   - id: upload
     shell: bash
-    run: python3 -m twine upload --repository ${{ inputs.pypi-name }} --disable-progress-bar dist/*
+    env:
+      PYPI_REPOSITORY: ${{ inputs.pypi-name }}
+      PYPI_HOST: ${{ inputs.pypi-host }}
+      PYPI_SIMPLE_URL: ${{ inputs.pypi-simple-url }}
+      PYPI_USER: ${{ inputs.pypi-user }}
+      PYPI_PASS: ${{ inputs.pypi-pass }}
+    run: |
+      if [ -z "$PYPI_SIMPLE_URL" ]; then
+        case "$PYPI_HOST" in
+          *upload.pypi.org*) PYPI_SIMPLE_URL="https://pypi.org/simple/" ;;
+          *) PYPI_SIMPLE_URL="https://${PYPI_HOST#https://}"; PYPI_SIMPLE_URL="${PYPI_SIMPLE_URL%/}/simple/" ;;
+        esac
+      fi
+      export PYPI_SIMPLE_URL
+      python3 "${{ github.action_path }}/upload.py"

@@ -31,7 +31,7 @@ runs:
   - id: setup-node
     uses: actions/setup-node@v7
     with:
-      node-version: 'latest'
+      node-version: 'lts/*'
 
   - id: install-semantic-release
     run: npm install --global semantic-release@25 > /dev/null
